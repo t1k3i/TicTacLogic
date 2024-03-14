@@ -32,10 +32,53 @@ public class TicTacLogicGame6X6 {
 
     private void generateGrid() {
         // TODO
+        this.grid = new char[6][6];
+        this.generateFullGrid(6, 0, 0, 0);
+    }
+
+    private boolean generateFullGrid(int ranNumberOfSquares, int ix, int i, int j) {
+        if (i >= this.grid.length) return true;
+        if (j >= this.grid[i].length) return this.generateFullGrid(ranNumberOfSquares, ix, i + 1, 0); 
+        if (ranNumberOfSquares > ix) {
+            int rI = (int) (Math.random() * this.grid.length), rJ = (int) (Math.random() * this.grid[0].length);
+            while (this.grid[rI][rJ] == 'X' || this.grid[rI][rJ] == 'O') {
+                System.out.println("Sem tle");
+                rI = (int) (Math.random() * this.grid.length); rJ = (int) (Math.random() * this.grid[0].length);
+            }
+            char random = Math.random() < 0.5 ? 'X' : 'O';
+            this.grid[rI][rJ] = random;
+            boolean valid = this.check();
+            if (!valid || !this.generateFullGrid(ranNumberOfSquares, ix + 1, 0, 0)) {
+                random = random == 'X' ? 'O' : 'X';
+                this.grid[rI][rJ] = random;
+                valid = this.check();
+                if (!valid || !this.generateFullGrid(ranNumberOfSquares, ix + 1, 0, 0)) {
+                    this.grid[rI][rJ] = 0;
+                    return false;
+                }
+            }
+        } else {
+            if (this.grid[i][j] != 0) return this.generateFullGrid(ranNumberOfSquares, ix + 1, i, j + 1); 
+            char random = Math.random() < 0.5 ? 'X' : 'O';
+            this.grid[i][j] = random;
+            boolean valid = this.check();
+            if (!valid || !this.generateFullGrid(ranNumberOfSquares, ix + 1, i, j + 1)) {
+                random = random == 'X' ? 'O' : 'X';
+                this.grid[i][j] = random;
+                valid = this.check();
+                if (!valid || !this.generateFullGrid(ranNumberOfSquares, ix + 1, i, j + 1)) {
+                    this.grid[i][j] = 0;
+                    return false;
+                }
+            }
+        }
+        return true;
+
     }
 
     // DONE??
     public boolean check() {
+        // Check rows
         Set<String> rowSet = new HashSet<>();
         for (int i = 0; i < this.grid.length; i++) {
             StringBuilder row = new StringBuilder("");
@@ -50,6 +93,7 @@ public class TicTacLogicGame6X6 {
                 else rowSet.add(row.toString());
             }
         }
+        // Check collums
         Set<String> collumSet = new HashSet<>();
         for (int j = 0; j < this.grid[0].length; j++) {
             StringBuilder collum = new StringBuilder("");
