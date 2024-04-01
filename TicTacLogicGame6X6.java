@@ -8,7 +8,7 @@ public class TicTacLogicGame6X6 {
 
     TicTacLogicGame6X6(char[][] grid) {
         this.grid = grid;
-        this.size = grid.length;
+        this.size = this.grid.length;
     }
 
     TicTacLogicGame6X6(int size) {
@@ -29,41 +29,64 @@ public class TicTacLogicGame6X6 {
     }*/
 
     public boolean solve() {
-        while (!this.full()) {
+        int countEmpty = 0;
+        for (int i = 0; i < this.size; i++) {
+            for (int j = 0; j < this.size; j++) {
+                if (this.grid[i][j] == 0) countEmpty++;
+            }
+        }
+
+        while (countEmpty > 0) {
+            countEmpty--;
             this.print();
             System.out.println(this.check());
-            int[] pair = this.findPair();
-            if (pair != null) {
-                this.grid[pair[0]][pair[1]] = pair[2] == 1 ? 'X' : 'O';
+            Triple<?, ?, ?> triple = this.avoidTriples1and2();
+            if (triple != null) {
+                System.out.println(">>>>>>>>>>>>>> Rule 1");
+                this.grid[(Integer) triple.fst()][(Integer) triple.snd()] = (Character) triple.thd();
                 continue;
             }
-            int[] fullLine = this.findFullLine();
-            if (fullLine != null) {
-                this.grid[fullLine[0]][fullLine[1]] = fullLine[2] == 1 ? 'X' : 'O';
+            triple = this.findFullLine();
+            if (triple != null) {
+                System.out.println(">>>>>>>>>>>>>> Rule 2");
+                this.grid[(Integer) triple.fst()][(Integer) triple.snd()] = (Character) triple.thd();
                 continue;
             }
-            int[] differentLine = this.findDifferentLine();
-            if (differentLine != null) {
-                this.grid[differentLine[0]][differentLine[1]] = differentLine[2] == 1 ? 'X' : 'O';
-                this.grid[differentLine[3]][differentLine[4]] = differentLine[5] == 1 ? 'X' : 'O';
+            triple = this.findDifferentLine();
+            if (triple != null) {
+                System.out.println(">>>>>>>>>>>>>> Rule 3");
+                int i1 = (Integer) ((Triple<?, ?, ?>)triple.fst()).fst();
+                int j1 = (Integer) ((Triple<?, ?, ?>)triple.fst()).snd();
+                char c1 = (Character) ((Triple<?, ?, ?>)triple.fst()).thd();
+                this.grid[i1][j1] = c1;
+                int i2 = (Integer) ((Triple<?, ?, ?>)triple.snd()).fst();
+                int j2 = (Integer) ((Triple<?, ?, ?>)triple.snd()).snd();
+                char c2 = (Character) ((Triple<?, ?, ?>)triple.snd()).thd();
+                this.grid[i2][j2] = c2;
+                countEmpty--;
                 continue;
             }
-            int[] avoidTriples = this.avoidTriples();
-            if (avoidTriples != null) {
-                this.grid[avoidTriples[0]][avoidTriples[1]] = avoidTriples[2] == 1 ? 'X' : 'O';
+            triple = this.avoidTriples3();
+            if (triple != null) {
+                System.out.println(">>>>>>>>>>>>>> Rule 4");
+                this.grid[(Integer) triple.fst()][(Integer) triple.snd()] = (Character) triple.thd();
                 continue;
             }
+            /*
             int[] advanced2 = this.advanced2();
             if (advanced2 != null) {
+                System.out.println(">>>>>>>>>>>>>> Advanced 1");
                 this.grid[advanced2[0]][advanced2[1]] = advanced2[2] == 1 ? 'X' : 'O';
                 continue;
-            }
+            }*/
             // TODO one more advanced rule
             return false;
         }
+
         return true;
     }
 
+    /* 
     private int[] advanced2() {
         int[] pair = new int[3];
         // Check rows ------------------------------------------------------------------------------------------------------------
@@ -202,98 +225,201 @@ public class TicTacLogicGame6X6 {
         }
         return null;
     }
+ */
 
-    private int[] avoidTriples() {
-        int[] pair = new int[3];
-        // Check rows -----------------------------------------------------------------------
-        for (int i = 0; i < this.grid.length; i++) {
-            int x = 0, o = 0;
-            StringBuilder row = new StringBuilder("");
-            for (int j = 0; j < this.grid[i].length; j++) {
+    private Triple<Integer, Integer, Character> avoidTriples1and2() {
+        // Check rows
+        for (int i = 0; i < this.size; i++) {
+            int consecXCount = 0; int consecOCount = 0;
+            for (int j = 0; j < this.size; j++) {
                 if (this.grid[i][j] == 'X') {
-                    x++;
-                    row.append('X');
+                    consecXCount++; consecOCount = 0;
+                    if (consecXCount == 2) {
+                        if (j + 1 < this.grid[i].length && this.grid[i][j + 1] == 0)
+                            return new Triple<Integer,Integer,Character>(i, j + 1, 'O');
+                        else if (j - 2 >= 0 && this.grid[i][j - 2] == 0)
+                            return new Triple<Integer,Integer,Character>(i, j - 2, 'O');
+                    }
+                } else if (this.grid[i][j] == 'O') {
+                    consecOCount++; consecXCount = 0;
+                    if (consecOCount == 2) {
+                        if (j + 1 < this.grid[i].length && this.grid[i][j + 1] == 0)
+                            return new Triple<Integer,Integer,Character>(i, j + 1, 'X');
+                        else if (j - 2 >= 0 && this.grid[i][j - 2] == 0)
+                            return new Triple<Integer,Integer,Character>(i, j - 2, 'X');
+                    }
+                } else if (this.grid[i][j] == 0 && j > 0 && j < this.size - 1) {
+                    consecXCount = 0; consecOCount = 0;
+                    if (this.grid[i][j - 1] == 'X' && this.grid[i][j + 1] == 'X')
+                        return new Triple<Integer,Integer,Character>(i, j, 'O');
+                    else if (this.grid[i][j - 1] == 'O' && this.grid[i][j + 1] == 'O')
+                        return new Triple<Integer,Integer,Character>(i, j, 'X');
+                } else {
+                    consecXCount = 0; consecOCount = 0;
                 }
-                else if (this.grid[i][j] == 'O') {
-                    o++;
+            }
+        }
+
+        // Check collums
+        for (int j = 0; j < this.size; j++) {
+            int consecXCount = 0; int consecOCount = 0;
+            for (int i = 0; i < this.size; i++) {
+                if (this.grid[i][j] == 'X') {
+                    consecXCount++; consecOCount = 0;
+                    if (consecXCount == 2) {
+                        if (i + 1 < this.size && this.grid[i + 1][j] == 0)
+                            return new Triple<Integer,Integer,Character>(i + 1, j, 'O');
+                        else if (i - 2 >= 0 && this.grid[i - 2][j] == 0)
+                            return new Triple<Integer,Integer,Character>(i - 2, j, 'O');
+                    }
+                } else if (this.grid[i][j] == 'O') {
+                    consecOCount++; consecXCount = 0;
+                    if (consecOCount == 2) {
+                        if (i + 1 < this.size && this.grid[i + 1][j] == 0)
+                            return new Triple<Integer,Integer,Character>(i + 1, j, 'X');
+                        else if (i - 2 >= 0 && this.grid[i - 2][j] == 0)
+                            return new Triple<Integer,Integer,Character>(i - 2, j, 'X');
+                    }
+                } else if (this.grid[i][j] == 0 && i > 0 && i < this.size - 1) {
+                    consecXCount = 0; consecOCount = 0;
+                    if (this.grid[i - 1][j] == 'X' && this.grid[i + 1][j] == 'X')
+                        return new Triple<Integer,Integer,Character>(i, j, 'O');
+                    else if (this.grid[i - 1][j] == 'O' && this.grid[i + 1][j] == 'O')
+                        return new Triple<Integer,Integer,Character>(i, j, 'X');
+                } else {
+                    consecXCount = 0; 
+                    consecOCount = 0;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private Triple<Integer, Integer, Character> findFullLine() {
+        int numOfXO = this.size / 2;
+
+        // Check rows
+        for (int i = 0; i < this.size; i++) {
+            int numOfX = 0; int numOfO = 0;
+            for (int j = 0; j < this.size; j++) {
+                if (this.grid[i][j] == 'X') {
+                    numOfX++;
+                } else if (this.grid[i][j] == 'O') {
+                    numOfO++;
+                }
+            }
+            if (numOfX == numOfXO) {
+                for (int j = 0; j < this.size; j++) {
+                    if (this.grid[i][j] == 0)
+                        return new Triple<Integer,Integer,Character>(i, j, 'O');
+                }
+            } else if (numOfO == numOfXO) {
+                for (int j = 0; j < this.size; j++) {
+                    if (this.grid[i][j] == 0)
+                        return new Triple<Integer,Integer,Character>(i, j, 'X');
+                }
+            }
+        }
+
+        // Check collums
+        for (int j = 0; j < this.size; j++) {
+            int numOfX = 0; int numOfO = 0;
+            for (int i = 0; i < this.size; i++) {
+                if (this.grid[i][j] == 'X') {
+                    numOfX++;
+                } else if (this.grid[i][j] == 'O') {
+                    numOfO++;
+                }
+            }
+            if (numOfX == numOfXO) {
+                for (int i = 0; i < this.size; i++) {
+                    if (this.grid[i][j] == 0)
+                        return new Triple<Integer,Integer,Character>(i, j, 'O');
+                }
+            } else if (numOfO == numOfXO) {
+                for (int i = 0; i < this.size; i++) {
+                    if (this.grid[i][j] == 0)
+                        return new Triple<Integer,Integer,Character>(i, j, 'X');
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private Triple<Integer, Integer, Character> avoidTriples3() {
+        // Check rows
+        for (int i = 0; i < this.size; i++) {
+            int numOfX = 0, numOfO = 0;
+            StringBuilder row = new StringBuilder("");
+            for (int j = 0; j < this.size; j++) {
+                if (this.grid[i][j] == 'X') {
+                    numOfX++;
+                    row.append('X');
+                } else if (this.grid[i][j] == 'O') {
+                    numOfO++;
                     row.append('O');
                 } else {
                     row.append('.');
                 }
             }
-            if (x > o || o > x) {
-                for (int j = 0; j < this.grid[i].length; j++) {
+            if (numOfX > numOfO || numOfO > numOfX) {
+                for (int j = 0; j < this.size; j++) {
                     if (row.charAt(j) == '.') {
                         row.replace(j, j + 1, "X");
-                        if (!checkLine(new StringBuilder(row.toString()))) {
-                            pair[0] = i;
-                            pair[1] = j;
-                            pair[2] = 0;
-                            return pair;
-                        }
+                        if (!checkLine(new StringBuilder(row.toString())))
+                            return new Triple<Integer,Integer,Character>(i, j, 'O');
                         row.replace(j, j + 1, "O");
-                        if (!checkLine(new StringBuilder(row.toString()))) {
-                            pair[0] = i;
-                            pair[1] = j;
-                            pair[2] = 1;
-                            return pair;
-                        }
+                        if (!checkLine(new StringBuilder(row.toString())))
+                            return new Triple<Integer,Integer,Character>(i, j, 'X');
                         row.replace(j, j + 1, ".");
                     }
                 }
             }
         }
-        // Check collums ------------------------------------------------------------------------------------
-        for (int j = 0; j < this.grid[0].length; j++) {
-            int x = 0, o = 0;
+
+        // Check collums
+        for (int j = 0; j < this.size; j++) {
+            int numOfX = 0, numOfO = 0;
             StringBuilder collum = new StringBuilder("");
-            for (int i = 0; i < this.grid.length; i++) {
+            for (int i = 0; i < this.size; i++) {
                 if (this.grid[i][j] == 'X') {
-                    x++;
+                    numOfX++;
                     collum.append('X');
-                }
-                else if (this.grid[i][j] == 'O') {
-                    o++;
+                } else if (this.grid[i][j] == 'O') {
+                    numOfO++;
                     collum.append('O');
                 } else {
                     collum.append('.');
                 }
             }
-            if (x > o || o > x) {
-                for (int i = 0; i < this.grid.length; i++) {
+            if (numOfX > numOfO || numOfO > numOfX) {
+                for (int i = 0; i < this.size; i++) {
                     if (collum.charAt(i) == '.') {
                         collum.replace(i, i + 1, "X");
-                        if (!checkLine(new StringBuilder(collum.toString()))) {
-                            pair[0] = i;
-                            pair[1] = j;
-                            pair[2] = 0;
-                            return pair;
-                        }
+                        if (!checkLine(new StringBuilder(collum.toString())))
+                            return new Triple<Integer,Integer,Character>(i, j, 'O');
                         collum.replace(i, i + 1, "O");
-                        if (!checkLine(new StringBuilder(collum.toString()))) {
-                            pair[0] = i;
-                            pair[1] = j;
-                            pair[2] = 1;
-                            return pair;
-                        }
+                        if (!checkLine(new StringBuilder(collum.toString())))
+                            return new Triple<Integer,Integer,Character>(i, j, 'X');
                         collum.replace(i, i + 1, ".");
                     }
                 }
             }
         }
+
         return null;
     }
 
-    public static boolean checkLine(StringBuilder str) {
-        int emtCounter = 0;
+    private static boolean checkLine(StringBuilder str) {
+        int emptyCounter = 0;
         for (int i = 0; i < str.length(); i++) {
             if (str.charAt(i) == '.') {
-                emtCounter++;
+                emptyCounter++;
             }
         }
-        if (emtCounter == 0) {
-            return checkString(str.toString()); 
-        }
+        if (emptyCounter == 0) return checkString(str.toString()); 
         for (int i = 0; i < str.length(); i++) {
             if (str.charAt(i) == '.') {
                 str.replace(i, i + 1, "X");
@@ -306,38 +432,34 @@ public class TicTacLogicGame6X6 {
         return false;
     }
 
-    public static boolean checkString(String str) {
-        int xR = 0, oR = 0, xR2 = 0, oR2 = 0;
+    private static boolean checkString(String str) {
+        int numOfXO = str.length() / 2;
+        int numOfX = 0, numOfO = 0, consecXCount = 0, consecOCount = 0;
         for (int i = 0; i < str.length(); i++) {
-            if (str.charAt(i) == 'X') {xR++; xR2++; oR2 = 0;}
-            else if (str.charAt(i) == 'O') {oR++; oR2++; xR2 = 0;}
-            if (xR > 3 || oR > 3 || xR2 > 2 || oR2 > 2) return false;
+            if (str.charAt(i) == 'X') {numOfX++; consecXCount++; consecOCount = 0;}
+            else if (str.charAt(i) == 'O') {numOfO++; consecOCount++; consecXCount = 0;}
+            if (numOfX > numOfXO || numOfO > numOfXO || consecXCount > 2 || consecOCount > 2) return false;
         }
-        if (xR == 3 && oR == 3) return true;
+        if (numOfX == numOfXO && numOfO == numOfXO) return true;
         return false;
     }
-    
-    private int[] findDifferentLine() {
-        int[] pair = new int[6];
-        // Check rows -------------------------------------------------------------------------------------
+
+    private Triple<Triple<Integer, Integer, Character>, Triple<Integer, Integer, Character>, ?> findDifferentLine() {
+        // Check rows
         Set<String> rowSet = new HashSet<>();
-        for (int i = 0; i < this.grid.length; i++) {
+        for (int i = 0; i < this.size; i++) {
             StringBuilder row = new StringBuilder("");
-            for (int j = 0; j < this.grid[i].length; j++) {
-                if (this.grid[i][j] == 'X') {
-                    row.append('X');
-                } else if (this.grid[i][j] == 'O') {
-                    row.append('O');
-                } else {
-                    row.append('.');
-                }
+            for (int j = 0; j < this.size; j++) {
+                if (this.grid[i][j] == 'X') row.append('X');
+                else if (this.grid[i][j] == 'O') row.append('O');
+                else row.append('.');
             }
             rowSet.add(row.toString());
         }
-        outher: for (int i = 0; i < this.grid.length; i++) {
-            int x = 0; int o = 0; int j1 = -1; int j2 = -1;
+        outher: for (int i = 0; i < this.size; i++) {
+            int x = 0; int o = 0; int empty1 = -1; int empty2 = -1;
             StringBuilder row = new StringBuilder("");
-            for (int j = 0; j < this.grid[i].length; j++) {
+            for (int j = 0; j < this.size; j++) {
                 if (this.grid[i][j] == 'X') {
                     row.append('X');
                     x++;
@@ -346,288 +468,85 @@ public class TicTacLogicGame6X6 {
                     o++;
                 } else {
                     row.append('.');
-                    if (j1 == -1) {
-                        j1 = j;
-                    } else if (j2 == -1) {
-                        j2 = j;
-                    } else {
-                        continue outher;
-                    }
+                    if (empty1 == -1) empty1 = j;
+                    else if (empty2 == -1) empty2 = j;
+                    else continue outher;
                 }
             }
-            if (x + o == 4) {
-                row.replace(j1, j1 + 1, "X");
-                row.replace(j2, j2 + 1, "O");
+            if (x + o == this.size - 2) {
+                row.replace(empty1, empty1 + 1, "X");
+                row.replace(empty2, empty2 + 1, "O");
                 String row1 = row.toString();
-                row.replace(j1, j1 + 1, "O");
-                row.replace(j2, j2 + 1, "X");
+                row.replace(empty1, empty1 + 1, "O");
+                row.replace(empty2, empty2 + 1, "X");
                 String row2 = row.toString();
                 if (rowSet.contains(row1) || rowSet.contains(row2)) {
                     if (rowSet.contains(row1) && rowSet.contains(row2)) return null;
-                    if (rowSet.contains(row1)) {
-                        row = new StringBuilder(row2);
-                    } else {
-                        row = new StringBuilder(row1);
-                    }
-                    pair[0] = i;
-                    pair[1] = j1;
-                    pair[2] = row.charAt(j1) == 'X' ? 1 : 0;
-                    pair[3] = i;
-                    pair[4] = j2;
-                    pair[5] = row.charAt(j2) == 'X' ? 1 : 0;
-                    return pair;
+                    if (rowSet.contains(row1)) row = new StringBuilder(row2);
+                    else row = new StringBuilder(row1);
+                    Triple<Integer, Integer, Character> triple1 = new Triple<>(i, empty1, row.charAt(empty1));
+                    Triple<Integer, Integer, Character> triple2 = new Triple<>(i, empty2, row.charAt(empty2));
+                    return new Triple<Triple<Integer,Integer,Character>,
+                        Triple<Integer,Integer,Character>,Object>(triple1, triple2, null);
                 }
             }
         }
-        // Check collums ---------------------------------------------------------------------------------------------------
+
+        // Check collums
         Set<String> collumSet = new HashSet<>();
-        for (int j = 0; j < this.grid[0].length; j++) {
+        for (int j = 0; j < this.size; j++) {
             StringBuilder collum = new StringBuilder("");
-            for (int i = 0; i < this.grid.length; i++) {
-                if (this.grid[i][j] == 'X') {
-                    collum.append('X');
-                } else if (this.grid[i][j] == 'O') {
-                    collum.append('O');
-                } else {
-                    collum.append('.');
-                }
+            for (int i = 0; i < this.size; i++) {
+                if (this.grid[i][j] == 'X') collum.append('X');
+                else if (this.grid[i][j] == 'O') collum.append('O');
+                else collum.append('.');
             }
             collumSet.add(collum.toString());
         }
-        outher2: for (int j = 0; j < this.grid[0].length; j++) {
-            int x2 = 0; int o2 = 0; int i1 = -1; int i2 = -1;
+        outher2: for (int j = 0; j < this.size; j++) {
+            int x = 0; int o = 0; int empty1 = -1; int empty2 = -1;
             StringBuilder collum = new StringBuilder("");
-            for (int i = 0; i < this.grid.length; i++) {
+            for (int i = 0; i < this.size; i++) {
                 if (this.grid[i][j] == 'X') {
                     collum.append('X');
-                    x2++;
+                    x++;
                 } else if (this.grid[i][j] == 'O') {
                     collum.append('O');
-                    o2++;
+                    o++;
                 } else {
                     collum.append('.');
-                    if (i1 == -1) {
-                        i1 = i;
-                    } else if (i2 == -1) {
-                        i2 = i;
-                    } else {
-                        continue outher2;
-                    }
+                    if (empty1 == -1) empty1 = i;
+                    else if (empty2 == -1) empty2 = i;
+                    else continue outher2;
                 }
             }
-            if (o2 + x2 == 4) {
-                collum.replace(i1, i1 + 1, "X");
-                collum.replace(i2, i2 + 1, "O");
+            if (o + x == this.size - 2) {
+                collum.replace(empty1, empty1 + 1, "X");
+                collum.replace(empty2, empty2 + 1, "O");
                 String collum1 = collum.toString();
-                collum.replace(i1, i1 + 1, "O");
-                collum.replace(i2, i2 + 1, "X");
+                collum.replace(empty1, empty1 + 1, "O");
+                collum.replace(empty2, empty2 + 1, "X");
                 String collum2 = collum.toString();
                 if (collumSet.contains(collum1) || collumSet.contains(collum2)) {
                     if (collumSet.contains(collum1) && collumSet.contains(collum2)) return null;
-                    if (collumSet.contains(collum1)) {
-                        collum = new StringBuilder(collum2);
-                    } else {
-                        collum = new StringBuilder(collum1);
-                    }
-                    pair[0] = i1;
-                    pair[1] = j;
-                    pair[2] = collum.charAt(i1) == 'X' ? 1 : 0;
-                    pair[3] = i2;
-                    pair[4] = j;
-                    pair[5] = collum.charAt(i2) == 'X' ? 1 : 0;
-                    return pair;
+                    if (collumSet.contains(collum1)) collum = new StringBuilder(collum2);
+                    else collum = new StringBuilder(collum1);
+                    Triple<Integer, Integer, Character> triple1 = new Triple<>(empty1, j, collum.charAt(empty1));
+                    Triple<Integer, Integer, Character> triple2 = new Triple<>(empty2, j, collum.charAt(empty2));
+                    return new Triple<Triple<Integer,Integer,Character>,
+                        Triple<Integer,Integer,Character>,Object>(triple1, triple2, null);
                 }
             }
         }
+
         return null;
     }
-
-    private int[] findFullLine() {
-        int[] pair = new int[3];
-        // Check rows
-        for (int i = 0; i < this.grid.length; i++) {
-            int xR = 0; int oR = 0;
-            for (int j = 0; j < this.grid[i].length; j++) {
-                if (this.grid[i][j] == 'X') {
-                    xR++;
-                } else if (this.grid[i][j] == 'O') {
-                   oR++;
-                }
-            }
-            if (xR == 3) {
-                for (int j = 0; j < this.grid[i].length; j++) {
-                    if (this.grid[i][j] == 0) {
-                        pair[0] = i;
-                        pair[1] = j;
-                        pair[2] = 0;
-                        return pair;
-                    }
-                }
-            } else if (oR == 3) {
-                for (int j = 0; j < this.grid[i].length; j++) {
-                    if (this.grid[i][j] == 0) {
-                        pair[0] = i;
-                        pair[1] = j;
-                        pair[2] = 1;
-                        return pair;
-                    }
-                }
-            }
-        }
-        // Check collums
-        for (int j = 0; j < this.grid[0].length; j++) {
-            int xC = 0; int oC = 0;
-            for (int i = 0; i < this.grid.length; i++) {
-                if (this.grid[i][j] == 'X') {
-                    xC++;
-                } else if (this.grid[i][j] == 'O') {
-                   oC++;
-                }
-            }
-            if (xC == 3) {
-                for (int i = 0; i < this.grid.length; i++) {
-                    if (this.grid[i][j] == 0) {
-                        pair[0] = i;
-                        pair[1] = j;
-                        pair[2] = 0;
-                        return pair;
-                    }
-                }
-            } else if (oC == 3) {
-                for (int i = 0; i < this.grid.length; i++) {
-                    if (this.grid[i][j] == 0) {
-                        pair[0] = i;
-                        pair[1] = j;
-                        pair[2] = 1;
-                        return pair;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    private int[] findPair() {
-        int[] pair = new int[3];
-        // Check rows
-        for (int i = 0; i < this.grid.length; i++) {
-            int xR2 = 0; int oR2 = 0;
-            for (int j = 0; j < this.grid[i].length; j++) {
-                if (this.grid[i][j] == 'X') {
-                    xR2++; oR2 = 0;
-                    if (xR2 == 2) {
-                        if (j + 1 < this.grid[i].length && this.grid[i][j + 1] == 0) {
-                            pair[0] = i;
-                            pair[1] = j + 1;
-                            pair[2] = 0;
-                            return pair;
-                        } else if (j - 2 >= 0 && this.grid[i][j - 2] == 0) {
-                            pair[0] = i;
-                            pair[1] = j - 2;
-                            pair[2] = 0;
-                            return pair;
-                        }
-                    }
-                }
-                else if (this.grid[i][j] == 'O') {
-                    oR2++; xR2 = 0;
-                    if (oR2 == 2) {
-                        if (j + 1 < this.grid[i].length && this.grid[i][j + 1] == 0) {
-                            pair[0] = i;
-                            pair[1] = j + 1;
-                            pair[2] = 1;
-                            return pair;
-                        } else if (j - 2 >= 0 && this.grid[i][j - 2] == 0) {
-                            pair[0] = i;
-                            pair[1] = j - 2;
-                            pair[2] = 1;
-                            return pair;
-                        }
-                    }
-                } else if (this.grid[i][j] == 0 && j > 0 && j < this.grid[i].length - 1) {
-                    xR2 = 0; oR2 = 0;
-                    if (this.grid[i][j - 1] == 'X' && this.grid[i][j + 1] == 'X') {
-                        pair[0] = i;
-                        pair[1] = j;
-                        pair[2] = 0;
-                        return pair;
-                    } else if (this.grid[i][j - 1] == 'O' && this.grid[i][j + 1] == 'O') {
-                        pair[0] = i;
-                        pair[1] = j;
-                        pair[2] = 1;
-                        return pair;
-                    }
-                } else {xR2 = 0; oR2 = 0;}
-            }
-        }
-        // Check collums
-        for (int j = 0; j < this.grid[0].length; j++) {
-            int xC2 = 0; int oC2 = 0;
-            for (int i = 0; i < this.grid.length; i++) {
-                if (this.grid[i][j] == 'X') {
-                    xC2++; oC2 = 0;
-                    if (xC2 == 2) {
-                        if (i + 1 < this.grid.length && this.grid[i + 1][j] == 0) {
-                            pair[0] = i + 1;
-                            pair[1] = j;
-                            pair[2] = 0;
-                            return pair;
-                        } else if (i - 2 >= 0 && this.grid[i - 2][j] == 0) {
-                            pair[0] = i - 2;
-                            pair[1] = j;
-                            pair[2] = 0;
-                            return pair;
-                        }
-                    }
-                }
-                else if (this.grid[i][j] == 'O') {
-                    oC2++; xC2 = 0;
-                    if (oC2 == 2) {
-                        if (i + 1 < this.grid.length && this.grid[i + 1][j] == 0) {
-                            pair[0] = i + 1;
-                            pair[1] = j;
-                            pair[2] = 1;
-                            return pair;
-                        } else if (i - 2 >= 0 && this.grid[i - 2][j] == 0) {
-                            pair[0] = i - 2;
-                            pair[1] = j;
-                            pair[2] = 1;
-                            return pair;
-                        }
-                    }
-                } else if (this.grid[i][j] == 0 && i > 0 && i < this.grid.length - 1) {
-                    xC2 = 0; oC2 = 0;
-                    if (this.grid[i - 1][j] == 'X' && this.grid[i + 1][j] == 'X') {
-                        pair[0] = i;
-                        pair[1] = j;
-                        pair[2] = 0;
-                        return pair;
-                    } else if (this.grid[i - 1][j] == 'O' && this.grid[i + 1][j] == 'O') {
-                        pair[0] = i;
-                        pair[1] = j;
-                        pair[2] = 1;
-                        return pair;
-                    }
-                } else {xC2 = 0; oC2 = 0;}
-            }
-        }
-        return null;
-    }
-
-    // DONE -------------------------------------------------------------------------
-    private boolean full() {
-        for (int i = 0; i < this.size; i++) {
-            for (int j = 0; j < this.size; j++) {
-                if (this.grid[i][j] == 0) return false;
-            }
-        }
-        return true;
-    }
-    // DONE -------------------------------------------------------------------------
 
     // DONE -------------------------------------------------------------------------
     public void print() {
-        System.out.println("-------------");
+        int numOfLine = this.size * 2 + 1;
+        for (int i = 0; i < numOfLine; i++) System.out.print("-");
+        System.out.println(); 
         for (int i = 0; i < this.size; i++) {
             System.out.print("|");
             for (int j = 0; j < this.size; j++) {
@@ -636,7 +555,8 @@ public class TicTacLogicGame6X6 {
             }
             System.out.println();
         }
-        System.out.println("-------------");
+        for (int i = 0; i < numOfLine; i++) System.out.print("-");
+        System.out.println(); 
     }
     // DONE -------------------------------------------------------------------------
 
@@ -686,7 +606,6 @@ public class TicTacLogicGame6X6 {
 
     // DONE -------------------------------------------------------------------------
     public boolean check() {
-
         int numOfXO = this.size / 2;
 
         // Check rows
@@ -697,6 +616,7 @@ public class TicTacLogicGame6X6 {
             for (int j = 0; j < this.size; j++) {
                 if (this.grid[i][j] == 'X') {numX++; consecXCount++; consecOCount = 0; row.append('X');}
                 else if (this.grid[i][j] == 'O') {numO++; consecOCount++; consecXCount = 0; row.append('O');}
+                else {consecOCount = 0; consecXCount = 0;}
                 if (numX > numOfXO || numO > numOfXO || consecXCount > 2 || consecOCount > 2) return false;
             }
             if (numX == numOfXO && numO == numOfXO) {
@@ -713,6 +633,7 @@ public class TicTacLogicGame6X6 {
             for (int i = 0; i < this.size; i++) {
                 if (this.grid[i][j] == 'X') {numX++; consecXCount++; consecOCount = 0; collum.append('X');}
                 else if (this.grid[i][j] == 'O') {numO++; consecOCount++; consecXCount = 0; collum.append('O');}
+                else {consecOCount = 0; consecXCount = 0;}
                 if (numX > numOfXO || numO > numOfXO || consecXCount > 2 || consecOCount > 2) return false;
             }
             if (numX == numOfXO && numO == numOfXO) {
@@ -722,7 +643,6 @@ public class TicTacLogicGame6X6 {
         }
 
         return true;
-
     }
     // DONE -------------------------------------------------------------------------
 
